@@ -42,4 +42,4 @@
 致谢
 ------
 
-感谢阅读，如有疑问请联系我 `@home2 <https://fanfou.com/home2>` 。
+感谢阅读，如有疑问请联系我 `@home2 <https://fanfou.com/home2>`_ 。
