@@ -29,19 +29,16 @@ class Dongle:
 
     def fetch(self, stat='REC UNREAD'):  # ALL = REC UNREAD + REC READ
         self.cmgl(stat)
-        self.out = []
+        self.data = []
         if 'OK' in self.resp[-1]:
-            self.out = self.reader.parse(self.resp)
-        return self.out
+            self.data = self.reader.parse(self.resp)
+        return self.data
 
     def close(self):
         self.ser.close()
 
 
 class Reader:
-    def __init__(self):
-        self.buffer = {}
-
     def storage(self):
         class Storage(dict):
             __getattr__ = dict.get
@@ -49,56 +46,47 @@ class Reader:
             __delattr__ = dict.__delitem__
         return Storage()
 
+    def clean(self, data):
+        for item in data:
+            del item.uidx
+            del item.page
+        return data
+
     def parse(self, resp):
-        out = []
-        for item in zip(resp[1:-2:2], resp[2:-2:2]):
+        buffer = {}
+        for item in zip(resp[1:-2:2], resp[2:-1:2]):
             item = self._parse(*item)
-            if item.page > 0:
-                last = self.buffer.get(item.phone)
-                if last and last.uidx == item.uidx:
-                    if last.page < item.page:
-                        last.text = last.text + item.text
-                    else:
-                        last.text = item.text + last.text
-                    last.index += ',' + item.index
-                    if len(last.index.split(',')) == item.pages:
-                        del last.uidx
-                        del last.page
-                        del last.pages
-                        out.append(last)
-                        del self.buffer[last.phone]
-                    else:
-                        self.buffer[item.phone] = last
+            last = buffer.get(item.uidx)
+            if last:
+                if last.page < item.page:
+                    last.text = last.text + item.text
                 else:
-                    self.buffer[item.phone] = item
+                    last.text = item.text + last.text
+                last.index += ',' + item.index
+                buffer[item.uidx] = last
             else:
-                del item.page
-                out.append(item)
-        return out
+                buffer[item.uidx] = item
+        return self.clean(buffer.values())
 
     def _parse(self, head, text):
         head = head.split(',')
         item = self.storage()
-        item.page = 0
+        item.page = int(head[-2])
+        item.uidx = int(head[-3])
         item.index = head[0].split(': ')[1]
         item.phone = head[2][-12:].strip('"')  # sometime maybe startwiths +86
         item.time = u'{} {}'.format(head[3], head[4])[1:-4]
         item.size = int(head[7])
         item.text = self.decode(text[:-2], item.size)
-        if len(head) > 8:
-            item.uidx = int(head[-3])
-            item.page = int(head[-2])
-            item.pages = int(head[-1])
         return item
 
     def decode(self, text, size):
-        out = []
         if len(text) == size:  # plain
-            out = list(text)
+            tmp = list(text)
         else:  # unicode
-            for i in range(0, len(text), 4):
-                out.append(six.unichr(int(text[i:i + 4], 16)))
-        return u''.join(out)
+            conv = lambda x, i: six.unichr(int(x[i:i + 4], 16))
+            tmp = [conv(text, i) for i in range(0, len(text), 4)]
+        return u''.join(tmp)
 
 
 if __name__ == '__main__':
