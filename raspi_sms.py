@@ -39,6 +39,13 @@ class Dongle:
 
 
 class Reader:
+    def __init__(self):
+        self._uidx = 0
+
+    def gen_uidx(self):
+        self._uidx -= 1
+        return self._uidx
+
     def storage(self):
         class Storage(dict):
             __getattr__ = dict.get
@@ -71,8 +78,12 @@ class Reader:
     def _parse(self, head, text):
         head = head.split(',')
         item = self.storage()
-        item.page = int(head[-2])
-        item.uidx = int(head[-3])
+        if len(head) <= 8:
+            item.page = 0
+            item.uidx = self.gen_uidx()
+        else:
+            item.page = int(head[-2])
+            item.uidx = int(head[-3])
         item.index = head[0].split(': ')[1]
         item.phone = head[2][-12:].strip('"')  # sometime maybe startwiths +86
         item.time = u'{} {}'.format(head[3], head[4])[1:-4]
