@@ -53,27 +53,22 @@ class Reader:
             __delattr__ = dict.__delitem__
         return Storage()
 
-    def clean(self, data):
-        for item in data:
-            del item.uidx
-            del item.page
-        return data
+    def merge(self, item, tmp):
+        tmp = list(zip(*sorted(tmp)))
+        item.index = ','.join(tmp[1])
+        item.text = ''.join(tmp[2])
+        item.size = sum(tmp[3])
+        del item.page, item.uidx
+        return item
 
     def parse(self, resp):
         buffer = {}
         for item in zip(resp[1:-2:2], resp[2:-1:2]):
             item = self._parse(*item)
-            last = buffer.get(item.uidx)
-            if last:
-                if last.page < item.page:
-                    last.text = last.text + item.text
-                else:
-                    last.text = item.text + last.text
-                last.index += ',' + item.index
-                buffer[item.uidx] = last
-            else:
-                buffer[item.uidx] = item
-        return self.clean(buffer.values())
+            last, tmp = buffer.get(item.uidx) or (item, [])
+            tmp.append([item.page, item.index, item.text, item.size])
+            buffer[item.uidx] = (last, tmp)
+        return [self.merge(*x) for x in buffer.values()]
 
     def _parse(self, head, text):
         head = head.split(',')
