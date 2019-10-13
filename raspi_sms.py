@@ -104,11 +104,11 @@ if __name__ == '__main__':
     dongle = Dongle()
     print('reading sms...')
 
-    def update(text, size):
+    def update(text):
         print('update status...')
         try:
-            if size > 140:
-                chunks = [text[i:i + 134] for i in range(0, size, 134)]
+            if len(text) > 140:
+                chunks = [text[i:i + 134] for i in range(0, len(text), 134)]
                 for i, v in enumerate(chunks):
                     text = '[%s/%s] %s' % (i + 1, len(chunks), v)
                     client.statuses.update({'status': text})
@@ -122,6 +122,6 @@ if __name__ == '__main__':
     while True:
         for item in dongle.fetch():
             if phone == item.phone:
-                if update(item.text, item.size) == 'OK':
+                if update(item.text) == 'OK':
                     dongle.cmgd(item.index)
         time.sleep(180)
