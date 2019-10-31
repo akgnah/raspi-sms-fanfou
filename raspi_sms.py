@@ -80,18 +80,18 @@ class Reader:
             item.page = int(head[-2])
             item.uidx = int(head[-3])
         item.index = head[0].split(': ')[1]
-        item.phone = head[2][-12:].strip('"')  # sometime maybe startwiths +86
+        item.phone = self.decode(head[2][1:-1], 15)[-12:]  # sometime maybe startwiths +86
         item.time = u'{} {}'.format(head[3], head[4])[1:-4]
         item.size = int(head[7])
         item.text = self.decode(text[:-2], item.size)
         return item
 
     def decode(self, text, size):
-        if len(text) == size:  # plain
-            tmp = list(text)
-        else:  # unicode
+        if len(text) > size:    # unicode
             conv = lambda x, i: six.unichr(int(x[i:i + 4], 16))
             tmp = [conv(text, i) for i in range(0, len(text), 4)]
+        else:  # plain
+            tmp = list(text)
         return u''.join(tmp)
 
 
