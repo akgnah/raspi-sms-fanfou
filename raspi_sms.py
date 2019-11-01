@@ -4,6 +4,9 @@ import time
 import serial
 import fanfou
 
+AUTHOR="akgnah <1024@setq.me>"
+VERSION="0.10.0"
+
 
 class Dongle:
     def __init__(self):
@@ -71,9 +74,9 @@ class Reader:
         return [self.merge(*x) for x in buffer.values()]
 
     def _parse(self, head, text):
-        head = head.split(',')
+        head = [x for x in head.split(',') if x]
         item = self.storage()
-        if len(head) <= 8:
+        if len(head) <= 7:
             item.page = 0
             item.uidx = self.gen_uidx()
         else:
@@ -82,7 +85,7 @@ class Reader:
         item.index = head[0].split(': ')[1]
         item.phone = self.decode(head[2][1:-1], 15)[-12:]  # sometime maybe startwiths +86
         item.time = u'{} {}'.format(head[3], head[4])[1:-4]
-        item.size = int(head[7])
+        item.size = int(head[6])
         item.text = self.decode(text[:-2], item.size)
         return item
 
