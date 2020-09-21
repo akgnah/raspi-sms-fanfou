@@ -74,7 +74,7 @@ class Reader:
         return [self.merge(*x) for x in buffer.values()]
 
     def _parse(self, head, text):
-        head = [x for x in head.split(',') if x]
+        head = [x.strip('"') for x in head.split(',') if x]
         item = self.storage()
         if len(head) <= 7:
             item.page = 0
@@ -83,8 +83,8 @@ class Reader:
             item.page = int(head[-2])
             item.uidx = int(head[-3])
         item.index = head[0].split(': ')[1]
-        item.phone = self.decode(head[2][1:-1], 15)[-12:]  # sometime maybe startwiths +86
-        item.time = u'{} {}'.format(head[3], head[4])[1:-4]
+        item.phone = self.decode(head[2], 20)[-12:]  # maybe startwiths +86
+        item.time = u'{} {}'.format(head[3], head[4])
         item.size = int(head[6])
         item.text = self.decode(text[:-2], item.size)
         return item
